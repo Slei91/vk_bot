@@ -17,8 +17,8 @@ except ImportError as err:
 
 GROUP_ID = 197388508
 
-price_words_list = ['Цена', 'цена', 'Стоимость', 'стоимость']
-timetable_words_list = ['Расписание', 'расписание']
+price_words_list = ['цена', 'стоимость']
+timetable_words_list = ['расписание']
 
 
 class Bot:
@@ -29,8 +29,11 @@ class Bot:
 
     def on_event(self):
         for event in self.long_poll.listen():
-            self.send_post_from_wall_to_members_ls(event=event)
-            self.get_info_from_bot_in_messages(event=event)
+            try:
+                self.send_post_from_wall_to_members_ls(event=event)
+                self.get_info_from_bot_in_messages(event=event)
+            except Exception as err:
+                print(err)
 
     def send_post_from_wall_to_members_ls(self, event):
         if event.type == VkBotEventType.WALL_POST_NEW and abs(event.object.from_id) == GROUP_ID:
@@ -42,13 +45,13 @@ class Bot:
 
     def get_info_from_bot_in_messages(self, event):
         if event.type == VkBotEventType.MESSAGE_NEW:
-            if event.object.text in timetable_words_list:
+            if event.object.text.lower() in timetable_words_list:
                 self.vk_api.messages.send(user_id=event.object.from_id,
                                           random_id=get_random_id(),
                                           peer_id=GROUP_ID,
                                           message=self.data_base_format_to_message())
 
-            elif event.object.text in price_words_list:
+            elif event.object.text.lower() in price_words_list:
                 self.vk_api.messages.send(user_id=event.object.from_id,
                                           random_id=get_random_id(),
                                           peer_id=GROUP_ID,
