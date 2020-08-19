@@ -26,6 +26,8 @@ class Bot:
         self.vk_session = vk_api.VkApi(token=token)
         self.long_poll = vk_api.bot_longpoll.VkBotLongPoll(vk=self.vk_session, group_id=GROUP_ID)
         self.vk_api = self.vk_session.get_api()
+        self.managers_id_list = [item['id'] for item in
+                                 self.vk_api.groups.getMembers(group_id=GROUP_ID, filter='managers')['items']]
 
     def on_event(self):
         for event in self.long_poll.listen():
@@ -37,7 +39,7 @@ class Bot:
 
     def send_post_from_wall_to_members_ls(self, event):
         if event.type == VkBotEventType.WALL_POST_NEW and abs(event.object.from_id) == GROUP_ID:
-            for user_id in self.vk_api.groups.getMembers(group_id=GROUP_ID, filter='friends')['items']:
+            for user_id in set(self.vk_api.groups.getMembers(group_id=GROUP_ID)['items']) - set(self.managers_id_list):
                 self.vk_api.messages.send(user_id=user_id,
                                           random_id=get_random_id(),
                                           peer_id=GROUP_ID,
