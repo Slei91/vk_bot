@@ -8,12 +8,24 @@ except ImportError as err:
     print(f'Ошибка токена, токен = {token}')
     print(err)
 try:
+    from group_token import SESSION_ID
+except ImportError as err:
+    SESSION_ID = None
+    print(f'Ошибка идентификатора сессии, id = {SESSION_ID}')
+    print(err)
+try:
+    from group_token import PROJECT_ID
+except ImportError as err:
+    PROJECT_ID = None
+    print(f'Ошибка идентификатора проекта, id = {PROJECT_ID}')
+    print(err)
+try:
     from data_base import timetable
 except ImportError as err:
     timetable = None
     print('Ошибка расписания')
     print(err)
-
+from dialogflow import DialogFlow
 
 GROUP_ID = 197388508
 
@@ -28,6 +40,7 @@ class Bot:
         self.vk_api = self.vk_session.get_api()
         self.managers_id_list = [item['id'] for item in
                                  self.vk_api.groups.getMembers(group_id=GROUP_ID, filter='managers')['items']]
+        self.df = DialogFlow(project_id=PROJECT_ID, session_id=SESSION_ID)
 
     def on_event(self):
         for event in self.long_poll.listen():
@@ -63,14 +76,11 @@ class Bot:
                                           Персональная тренировка - 1000 рублей
                                           ''')
             else:
+                response = self.df.take_response_from_df(message_text=event.object.text)
                 self.vk_api.messages.send(user_id=event.object.from_id,
                                           random_id=get_random_id(),
                                           peer_id=GROUP_ID,
-                                          message='''
-                                          Я вас не понимаю =(
-                                          'Цена' - чтобы узнать стоимость занятия
-                                          'Расписание' - чтобы узнать расписание тренировок
-                                          ''')
+                                          message=response.query_result.fulfillment_text)
 
     @staticmethod
     def data_base_format_to_message():
